@@ -1,68 +1,45 @@
-// This is our service worker
-//
-var CACHE_NAME = 'gih-cache';
-
-var CACHED_URLS = [
+const CACHE_NAME = 'gih-cache-1';
+const CACHED_URLS = [
   '/index-offline.html',
   'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css',
   '/css/gih-offline.css',
   '/img/jumbo-background-sm.jpg',
-  '/img/logo-header.png',
+  '/img/logo-header.png'
 ];
 
-self.addEventListener('install', function(event) {
-  console.log('Installing now and caching hook');
+
+self.addEventListener('install', function (event) {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      console.log('Caching 1');
+    caches.open(CACHE_NAME).then(function (cache) {
       return cache.addAll(CACHED_URLS);
     })
   );
 });
 
+self.addEventListener('activate', function (event) {
+  event.waitUntil(
+    caches.keys().then(function (cacheNames) {
+      return Promise.all(
+        cacheNames.map(function (cacheName) {
+          if (CACHE_NAME !== cacheName && cacheName.startsWith('gih-cache')) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
 
-self.addEventListener('fetch', function(event) {
+self.addEventListener('fetch', function (event) {
   event.respondWith(
-    fetch(event.request).catch(function() {
-      return caches.match(event.request).then(function(response) {
+    fetch(event.request).catch(function () {
+      return caches.match(event.request).then(function (response) {
         if (response) {
           return response;
-        } else if (event.request.headers.get('accept').includes('text/html')) {
+        } else if (event.request.headers.get('Accept').includes('text/html')) {
           return caches.match('/index-offline.html');
         }
       });
     })
   );
 });
-
-// var responseContent =
-//   "<html><body>" +
-//   "<style>" +
-//   "body {text-align: center; background-color: #333; color: #eee;}" +
-//   "</style>" +
-//   "<h1>Gotham Imperial Hotel</h1>" +
-//   "</body></html>";
-// self.addEventListener('fetch', function(event) {
-//   // First few things to try
-//   // if (event.request.url.includes('bootstrap.min.css')) {
-//   //   event.respondWith(
-//   //     new Response(
-//   //       '.hotel-slogan {background: green!important;} nav {display:none}',
-//   //       { headers: { 'Content-Type': 'text/css'}}
-//   //     )
-//   //   );
-//   // }
-// 
-//   // if (event.request.url.includes('/img/logo.png')) {
-//   //   event.respondWith(
-//   //     fetch('/img/logo-flipped.png')
-//   //   );
-//   // }
-// 
-//   event.respondWith(
-//     fetch(event.request).catch(function() {
-//       return fetch('/index-offline.html');
-//     })
-//   );
-//   console.log('Fetch request for:', event.request.url);
-// });
